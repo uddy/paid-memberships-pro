@@ -431,7 +431,7 @@
 			$password2 = $password;
 		}	
 				
-		if($pmpro_requirebilling && $gateway != "paypalexpress" && $gateway != "paypalstandard" && $gateway != "twocheckout")
+		if($pmpro_requirebilling && $gateway != "paypalexpress" && $gateway != "paypalstandard" && $gateway != "twocheckout" && $gateway != "interswitch")
 		{									
 			//if using stripe lite, remove some fields from the required array
 			$pmpro_stripe_lite = apply_filters("pmpro_stripe_lite", false);
@@ -688,6 +688,14 @@
 							$morder->ProfileStartDate = date("Y-m-d", strtotime("+ " . $morder->BillingFrequency . " " . $morder->BillingPeriod)) . "T0:0:0";
 							$morder->ProfileStartDate = apply_filters("pmpro_profile_start_date", $morder->ProfileStartDate, $morder);							
 							$pmpro_processed = $morder->Gateway->setExpressCheckout($morder);
+						}
+						else if($gateway == "interswitch")
+						{
+							$morder->payment_type = "Interswitch";
+							$morder->cardtype = "";
+							$morder->ProfileStartDate = date("Y-m-d", strtotime("+ " . $morder->BillingFrequency . " " . $morder->BillingPeriod)) . "T0:0:0";
+							$morder->ProfileStartDate = apply_filters("pmpro_profile_start_date", $morder->ProfileStartDate, $morder);							
+							$pmpro_processed = $morder->process();
 						}
 						else
 						{
