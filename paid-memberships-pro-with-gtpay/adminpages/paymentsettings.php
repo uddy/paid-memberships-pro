@@ -44,6 +44,9 @@
 		pmpro_setOption("gtpay_merchantid");
 		pmpro_setOption("gtpay_post_url");
 		pmpro_setOption("gtpay_return_url");
+		pmpro_setOption("gtpay_tranx_curr");
+		pmpro_setOption("gtpay_gway_first");
+		pmpro_setOption("gtpay_gway_name");
 		//currency
 		pmpro_setOption("currency");
 			
@@ -114,6 +117,10 @@
 	$gtpay_merchantid =	pmpro_getOption("gtpay_merchantid");
 	$gtpay_post_url =	pmpro_getOption("gtpay_post_url");
 	$gtpay_return_url =	pmpro_getOption("gtpay_return_url");
+	$gtpay_tranx_curr =	pmpro_getOption("gtpay_tranx_curr");
+	$gtpay_gway_first =	pmpro_getOption("gtpay_gway_first");
+	$gtpay_gway_name =	pmpro_getOption("gtpay_gway_name");
+		
 	
 	$currency = pmpro_getOption("currency");
 	
@@ -410,6 +417,8 @@
 					<input type="text" name="gtpay_post_url" size="60" value="<?php echo $gtpay_post_url?>" />
 				</td>
 			</tr>
+	
+	
 
 			<tr class="gateway gateway_gtpay" <?php if($gateway != "gtpay") { ?>style="display: none;"<?php } ?>>
 				<th scope="row" valign="top">
@@ -417,6 +426,42 @@
 				</th>
 				<td>
 					<input type="text" name="gtpay_return_url" size="60" value="<?php echo $gtpay_return_url?>" />
+				</td>
+			</tr>
+			
+			<tr class="gateway gateway_gtpay" <?php if($gateway != "gtpay") { ?>style="display: none;"<?php } ?>>
+				<th scope="row" valign="top">
+					<label for="gtpay_gway_first"><?php _e('GTPay Take Customer directly to Merchant page', 'pmpro');?>:</label>
+				</th>
+				<td>
+					<select name="gtpay_gway_first">
+						<option value="yes" <?php selected( $gtpay_gway_first, "yes" ); ?>><?php _e('Yes', 'pmpro');?></option>
+						<option value="no" <?php selected( $gtpay_gway_first, "no" ); ?>><?php _e('No', 'pmpro');?></option>
+					</select>
+				</td>
+			</tr>
+			
+			<tr class="gateway gateway_gtpay" <?php if($gateway != "gtpay") { ?>style="display: none;"<?php } ?>>
+				<th scope="row" valign="top">
+					<label for="gtpay_gway_name"><?php _e('GTPay gateway for transaction', 'pmpro');?>:</label>
+				</th>
+				<td>
+					<select name="gtpay_gway_name">
+						<option value="webpay" <?php selected( $gtpay_gway_name, "webpay" ); ?>><?php _e('WebPay', 'pmpro');?></option>
+						<option value="migs" <?php selected( $gtpay_gway_name, "migs" ); ?>><?php _e('Master-card International Gateway', 'pmpro');?></option>
+					</select>
+				</td>
+			</tr>
+			
+			<tr class="gateway gateway_gtpay" <?php if($gateway != "gtpay") { ?>style="display: none;"<?php } ?>>
+				<th scope="row" valign="top">
+					<label for="gtpay_tranx_curr"><?php _e('GTpay Payment Currency Code', 'pmpro');?>:</label>
+				</th>
+				<td>
+					<select name="gtpay_tranx_curr">
+						<option value="566" <?php selected( $gtpay_tranx_curr, "566" ); ?>><?php _e('Naira(566)', 'pmpro');?></option>
+						<option value="844" <?php selected( $gtpay_tranx_curr, "844" ); ?>><?php _e('USD(844)', 'pmpro');?></option>
+					</select>
 				</td>
 			</tr>
 			

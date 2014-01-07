@@ -203,6 +203,9 @@
 			$gtpay_merchantid =	pmpro_getOption("gtpay_merchantid");
 			$gtpay_post_url =	pmpro_getOption("gtpay_post_url");
 			$gtpay_return_url =	pmpro_getOption("gtpay_return_url");
+			$gtpay_tranx_curr =	pmpro_getOption("gtpay_tranx_curr");
+			$gtpay_gway_first =	pmpro_getOption("gtpay_gway_first");
+			$gtpay_gway_name =	pmpro_getOption("gtpay_gway_name");
 	
 			//taxes on initial amount
 			$initial_payment = $order->InitialPayment;
@@ -239,8 +242,8 @@
 					$order->shorterror = "Invalid billing period: " . $order->BillingPeriod;
 					return false;
 				}
-				$gtpay_currency = "566";
-				$gtpay_gway_name ="webpay";				
+				$gtpay_currency = $gtpay_tranx_curr;
+				//$gtpay_gway_name =$gtpay_gway_name;				
 				$amt = number_format($amount, 2);
 				$formatAmt =strval($amt);
 				$amtarry = explode('.', $formatAmt);
@@ -252,6 +255,7 @@
 					'gtpay_tranx_id'		=> $order->code,         
 					'gtpay_tranx_amt'		=> $gtpay_tranx_amt,
 					'gtpay_tranx_curr'		=> $gtpay_currency,
+					'gtpay_gway_first'      => $gtpay_gway_first,
 					'gtpay_cust_id'			=> $cust_id,
 					'gtpay_cust_name'		=> $order->Email,
 					'gtpay_tranx_memo'		=> substr($order->membership_level->name . " at " . get_bloginfo("name"), 0, 127),
