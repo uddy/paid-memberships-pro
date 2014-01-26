@@ -683,16 +683,18 @@
 			</span>
 			<?php } ?>
 			
-			<span id="pmpro_submit_span" <?php if(($gateway == "paypalexpress" || $gateway == "paypalstandard" || $gateway == "gtpay") && $pmpro_requirebilling) { ?>style="display: none;"<?php } ?>>
+			<span id="pmpro_submit_span" style="display: none;">
 				<input type="hidden" name="submit-checkout" value="1" />		
-				<input type="submit" class="pmpro_btn pmpro_btn-submit-checkout" value="<?php if($pmpro_requirebilling) { if($gateway == "twocheckout") { _e('Submit and Pay with 2CheckOut', 'pmpro'); } else { _e('Submit and Check Out', 'pmpro'); } } else { _e('Submit and Confirm', 'pmpro');}?> &raquo;" />				
+				<input type="submit" class="pmpro_btn pmpro_btn-submit-checkout" value="<?php if($pmpro_requirebilling && $gateway != "gtpay") { if($gateway == "twocheckout") { _e('Submit and Pay with 2CheckOut', 'pmpro'); } else { _e('Submit and Check Out', 'pmpro'); } } else { _e('Submit and Confirm', 'pmpro');}?> &raquo;" />				
 			</span>
 		
 		
 		<span id="pmpro_submit_span" <?php if($gateway != "gtpay"){ ?>style="display: none;"<?php } ?>>
 				<input type="hidden" name="submit-checkout" value="1" />		
-				<input type="submit" class="pmpro_btn pmpro_btn-submit-checkout" value="<?php if($pmpro_requirebilling) { if($gateway == "gtpay") { _e('Submit and Pay with GTPay', 'pmpro'); } else { _e('Submit and Check Out', 'pmpro'); } } else { _e('Submit and Confirm', 'pmpro');}?> &raquo;" />				
+				<input type="submit" class="pmpro_btn pmpro_btn-submit-checkout btn-primary btn" value="<?php _e('Submit and Pay with GTPay', 'pmpro'); ?> &raquo;" />				
 			</span>
+			
+			
 		<?php } ?>
 		<span id="pmpro_processing_message" style="visibility: hidden;">
 			<?php 
@@ -700,6 +702,10 @@
 				echo $processing_message;
 			?>					
 		</span>
+		
+		<?php if($gateway == "gtpay"){ ?>
+			<img src="http://ndlink.org/wp-content/uploads/2013/12/interswitch-webpay-logo.jpg" alt=""/>
+			<?php } ?>
 	</div>	
 		
 </form>

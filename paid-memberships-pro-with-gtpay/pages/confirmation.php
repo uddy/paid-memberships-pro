@@ -1,6 +1,59 @@
 <?php 
-	global $wpdb, $current_user, $pmpro_invoice, $pmpro_msg, $pmpro_msgt, $pmpro_currency_symbol;
+	global $wpdb, $current_user, $pmpro_invoice, $pmpro_msg, $pmpro_msgt, $pmpro_currency_symbol,$display_invoice,$gtpay_error,$gtpay_tranx_status_msg;
+	$payment_transaction_id ="n/a";
+	$msg_returened ="n/a";
+	if(pmpro_getOption("gateway") == "gtpay" && !pmpro_isLevelFree($pmpro_invoice->membership_level))
+		{
+			if(isset($_REQUEST['status']) && isset($pmpro_invoice))
+			{
+				
+				$mode = pmpro_getOption("gateway_environment");		
+				$ordercode =$pmpro_invoice->code;
+				$txnamount=$pmpro_invoice->total;
+				
+				
+				$decode = gtpay_get_transaction_status($ordercode,$txnamount,$mode );
+				//var_dump($decode);
+				
+				$return=$decode["ResponseCode"];
+				$data= "";
+				if($return == "00" || $return == "001")
+				{	$pmpro_invoice->payment_transaction_id =$decode["PaymentReference"];
+					$payment_transaction_id=$decode["PaymentReference"];
+					$display_invoice = true;	
+					$data.= '<p>Note: your transaction reference is:<strong>'.$decode["MerchantReference"].'</strong> </p>';
+					$data.= '<p>Payment Reference:'.$decode["PaymentReference"].'</p>';
+					$data.=  '<p><strong>Transaction Message</strong></p>';
+					$data.=  '<hr/>';
+					$data.=  '<p><em style="color:green">'.$decode["ResponseDescription"].'</em></p>';
+					$msg_returened = $decode["ResponseDescription"]." | Code:".$return." | Approved Amount:".$decode["Amount"]." | Card Ending:...".$decode["CardNumber"];
+				}else
+					{
+						$display_invoice = false;
+						$data.= '<p>Note: your transaction reference is:<strong>'.$pmpro_invoice->code.'</strong> </p>';
+						$data.= '<p>Payment Reference:'.$decode["PaymentReference"].'</p>';
+						$data.=  '<p><strong>Transaction Message</strong></p>';
+						$data.=  '<hr/>';
+						$data.=  '<p><em style="color:red"> Transaction Failed:'.$decode["ResponseDescription"].'</em></p>';
+						$pmpro_invoice->payment_transaction_id =$decode["PaymentReference"];
+						$payment_transaction_id=$decode["PaymentReference"];
+						$gtpay_error = "show-error";
+						$msg_returened = $decode["ResponseDescription"]." | Code:".$return." | Approved Amount:".$decode["Amount"]." | Card Ending:...".$decode["CardNumber"];
+						
+					}	
+							$gtpay_tranx_status_msg =$data;
+							
+			}else
+			{
+				$gtpay_error = "show-paynow";
+			}
+		}
 	
+	
+	
+	
+	if($display_invoice){
+	echo $gtpay_tranx_status_msg;
 	if($pmpro_msg)
 	{
 	?>
@@ -116,4 +169,34 @@
 		<?php } ?>
 	</div>
 </nav>
+<?php 
 
+						//echo $gtpay_tranx_status_msg;
+						$pmpro_invoice->getUser();
+						$pmpro_invoice->getMembershipLevel();
+						$pmpro_invoice->Gateway->paymentsuccessfull($pmpro_invoice,$payment_transaction_id,$msg_returened);
+						pmpro_changeMembershipLevel($pmpro_invoice->membership_id, $pmpro_invoice->user->ID);
+} else{
+if($gtpay_error === "show-error")
+{
+			echo $gtpay_tranx_status_msg;
+			
+			//$pmpro_invoice->Gateway->void($pmpro_invoice);
+			$pmpro_invoice->Gateway->paymentfailed($pmpro_invoice,$payment_transaction_id,$msg_returened);
+			pmpro_changeMembershipLevel(0, $pmpro_invoice->user->ID); //need to remove from order membership level 	
+
+}
+if($gtpay_error === "show-paynow")
+{
+		$pmpro_invoice->getUser();
+		$pmpro_invoice->getMembershipLevel();
+		$pmpro_invoice->Gateway->sendToWebPay($pmpro_invoice);
+		
+		}
+
+
+}
+ ?>
+ <?php if($gateway == "gtpay"){ ?>
+			<img src="http://ndlink.org/wp-content/uploads/2013/12/interswitch-webpay-logo.jpg" alt=""/>
+			<?php } ?>

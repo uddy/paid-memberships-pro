@@ -103,7 +103,7 @@
 						}
 						
 						$order->ProfileStartDate = apply_filters("pmpro_profile_start_date", $order->ProfileStartDate, $order);
-						$order->status = "review";	//saved on checkout page																			
+						$order->status = "pending";	//saved on checkout page																			
 						$order->saveOrder();						
 						return true;
 													
@@ -112,7 +112,7 @@
 					else
 					{
 						//only a one time charge
-						$order->status = "review";	//saved on checkout page																			
+						$order->status = "pending";	//saved on checkout page																			
 						$order->saveOrder();						
 						return true;
 					}
@@ -135,7 +135,7 @@
 				$order->code = $order->getRandomCode();
 			
 			//simulate a successful authorization
-			$order->payment_transaction_id = "txn-" . $order->code;
+			
 			$order->updateStatus("authorized");													
 			return true;					
 		}
@@ -147,7 +147,7 @@
 				return false;
 				
 			//simulate a successful void
-			$order->payment_transaction_id = "txn-" . $order->code;
+			
 			$order->updateStatus("voided");					
 			return true;
 		}	
@@ -159,8 +159,10 @@
 				$order->code = $order->getRandomCode();
 			
 			//simulate a successful charge
-			$order->payment_transaction_id = "txn-" . $order->code;
-			$order->updateStatus("success");					
+			
+			//$order->payment_transaction_id = "txn-" . $order->code;
+			
+			$order->updateStatus("pending");					
 			return true;						
 		}
 		
@@ -174,11 +176,44 @@
 			$order = apply_filters("pmpro_subscribe_order", $order, $this);
 			
 			//simulate a successful subscription processing
+			
 			$order->status = "success";		
-			$order->subscription_transaction_id = "txn-" . $order->code;				
+			$order->subscription_transaction_id = "txn-" . $order->code;
+			$order->updateStatus("success");
 			return true;
 		}	
-		
+		function paymentsuccessfull(&$order,$paymentref,$msg)
+		{
+			//create a code for the order
+			if(empty($order->code))
+				$order->code = $order->getRandomCode();
+			
+			//filter order before subscription. use with care.
+			$order = apply_filters("pmpro_subscribe_order", $order, $this);
+			
+			//simulate a successful subscription processing
+			global $wpdb;
+			
+		 $wpdb->query("Update $wpdb->pmpro_membership_orders  SET payment_transaction_id ='".esc_sql($paymentref)."',subscription_transaction_id='".esc_sql("txn-" . $order->code)."',notes='".esc_sql($msg)."'	 WHERE code= '" . esc_sql($order->code) . "'");
+			
+			$order->updateStatus("success");
+			return true;
+		}
+		function paymentfailed(&$order,$paymentref,$msg)
+		{
+			//create a code for the order
+			if(empty($order->code))
+				$order->code = $order->getRandomCode();
+			
+			
+			//simulate a successful subscription processing
+			global $wpdb;
+			
+		 $wpdb->query("Update $wpdb->pmpro_membership_orders  SET payment_transaction_id ='".esc_sql($paymentref)."',subscription_transaction_id='".esc_sql("txn-" . $order->code)."',notes='".esc_sql($msg)."'	 WHERE code= '" . esc_sql($order->code) . "'");
+			
+			$order->updateStatus("voided");
+			return true;
+		}
 		function update(&$order)
 		{
 			//simulate a successful billing update
@@ -225,26 +260,10 @@
 			else
 				$gtpay_url =$gtpay_post_url;// "https://www.paypal.com/cgi-bin/webscr?business=" . urlencode(pmpro_getOption("gateway_email"));
 			
-			if(pmpro_isLevelRecurring($order->membership_level))
-			{				
-				//convert billing period
-				if($order->BillingPeriod == "Day")
-					$period = "D";
-				elseif($order->BillingPeriod == "Week")
-					$period = "W";
-				elseif($order->BillingPeriod == "Month")
-					$period = "M";
-				elseif($order->BillingPeriod == "Year")
-					$period = "Y";				
-				else
-				{
-					$order->error = "Invalid billing period: " . $order->BillingPeriod;
-					$order->shorterror = "Invalid billing period: " . $order->BillingPeriod;
-					return false;
-				}
+			
 				$gtpay_currency = $gtpay_tranx_curr;
-				//$gtpay_gway_name =$gtpay_gway_name;				
-				$amt = number_format($amount, 2);
+						
+				 $amt = $order->total;//number_format($order->total, 2);
 				$formatAmt =strval($amt);
 				$amtarry = explode('.', $formatAmt);
 				$gtpay_tranx_amt = $amtarry[0].$amtarry[1];
@@ -253,25 +272,31 @@
 				$gtpay_args = array( 
 					'gtpay_mert_id'         => $gtpay_merchantid, 
 					'gtpay_tranx_id'		=> $order->code,         
-					'gtpay_tranx_amt'		=> $gtpay_tranx_amt,
+					'gtpay_tranx_amt'		=> $gtpay_tranx_amt."00",
 					'gtpay_tranx_curr'		=> $gtpay_currency,
 					'gtpay_gway_first'      => $gtpay_gway_first,
 					'gtpay_cust_id'			=> $cust_id,
 					'gtpay_cust_name'		=> $order->Email,
-					'gtpay_tranx_memo'		=> substr($order->membership_level->name . " at " . get_bloginfo("name"), 0, 127),
+					'gtpay_tranx_memo'		=> substr("NDLink Membership Level: ".$order->membership_level->name . " at " . get_bloginfo("name"), 0, 127),
 					'gtpay_gway_name'     	=> $gtpay_gway_name,					
-					'gtpay_tranx_noti_url'  => $gtpay_return_url."=".$order->membership_level->membership_id, 
+					'gtpay_tranx_noti_url'  => $gtpay_return_url.$order->membership_level->membership_id.'&status=done', 
 					'gtpay_echo_data'       => $order->code
 					
 				);					
 								
 				
-			}
 			
 			
+			global $pmpro_currency_symbol;
 			echo '<form id="2checkout" action="'.$gtpay_post_url.'" method="post">';
-			
+			echo '<p>Note: your transaction reference is:<strong>'.$order->code.'</strong></p>';
+			echo '<p>(Quote it in event of any problems.)</p>';
+			echo '<p>Payment For:'.substr("NDLink Membership Level <strong>[".$order->membership_level->name . "] ", 0, 127).'</strong> (valid for 1yr) </p>';
+			echo '<p>Amount:<strong>'.$pmpro_currency_symbol.number_format($order->total, 2).'</strong>(valid for 1yr) </p>';
+			echo '<hr/>';
+			//echo '<p><em> Click "PAY NOW" or </em></p>';
 			//print_r($gtpay_args);
+			
 			if (is_array($gtpay_args))
 			{
 
@@ -282,10 +307,10 @@
 			}
 
 		   
-			echo '<input type="submit" value="Pay with GTPay" /></form>';
-			echo '<script type="text/javascript">function submitForm() {document.getElementById("tco_lightbox").style.display = "block"; document.getElementById("2checkout").submit();}
-					   setTimeout("submitForm()", 1);
-				  </script>';
+			echo '<input type="submit" value="Pay Now" class="btn btn-primary" />   <input type="button" value="Back" class="btn pull-right" onclick="BackToCheckout()" /></form>';
+			 // echo '<script type="text/javascript">function submitForm() {document.getElementById("2checkout").submit();}
+					   // setTimeout("submitForm()", 10000);
+				   // </script>';
    
 		}
 		

@@ -32,6 +32,10 @@
 			<?php if($pmpro_invoice->getDiscountCode()) { ?>
 				<li><strong><?php _e('Discount Code', 'pmpro');?>:</strong> <?php echo $pmpro_invoice->discount_code->code?></li>
 			<?php } ?>
+			<li><strong><?php _e('Status', 'pmpro');?>:</strong> <?php echo $pmpro_invoice->status?> </li>
+			<li><strong><?php _e('Notes', 'pmpro');?>:</strong> <?php echo $pmpro_invoice->notes?> </li>
+			<li><strong><?php _e('Transaction Ref', 'pmpro');?>:</strong> <?php echo $pmpro_invoice->code?> </li>
+			<li><strong><?php _e('Payment Ref', 'pmpro');?>:</strong> <?php echo $pmpro_invoice->payment_transaction_id?> </li>
 			<?php do_action("pmpro_invoice_bullets_bottom", $pmpro_invoice); ?>
 		</ul>
 		

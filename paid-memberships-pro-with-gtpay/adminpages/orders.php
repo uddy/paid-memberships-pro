@@ -33,6 +33,44 @@
 		}
 	}
 	
+	if(isset($_REQUEST['verify']))
+	{
+	//verify=true&user_id=&order=&total=&mode
+		$order_id = intval($_REQUEST['order']);
+		if($order_id > 0)
+		{
+			$mode= pmpro_getOption("gateway_environment");
+			$order = new MemberOrder($order_id);
+			$ordercode =$order->code;
+			$txnamount=$order->total;
+			$decode = gtpay_get_transaction_status($ordercode,$txnamount,$mode );
+				//var_dump($decode);
+				
+				$return=$decode["ResponseCode"];
+				$data= "";
+				if($return == "00" || $return == "001")
+				{
+					$order->payment_transaction_id =$decode["PaymentReference"];
+					$payment_transaction_id=$decode["PaymentReference"];
+					$msg_returened = $decode["ResponseDescription"]." | Code:".$return." | Approved Amount:".$decode["Amount"]." | Card Ending:...".$decode["CardNumber"];
+					$order->Gateway->paymentsuccessfull($order,$payment_transaction_id,$msg_returened);
+					pmpro_changeMembershipLevel($order->membership_id, $order->user->ID); //need to remove from order membership level 	
+					$pmpro_msg = __("Order Verification Done successfully.", "pmpro");
+					$pmpro_msgt = "success";
+				}else{
+					$order->payment_transaction_id =$decode["PaymentReference"];
+					$payment_transaction_id=$decode["PaymentReference"];
+					$msg_returened = $decode["ResponseDescription"]." | Code:".$return." | Approved Amount:".$decode["Amount"]." | Card Ending:...".$decode["CardNumber"];
+					$order->Gateway->paymentfailed($order,$payment_transaction_id,$msg_returened);
+					
+					$pmpro_msg = __("Order Verification Done: See Order Details.", "pmpro");
+					$pmpro_msgt = "error";
+				}
+		
+		}
+		
+	}
+	
 	//this array stores fields that should be read only
 	$read_only_fields = apply_filters("pmpro_orders_read_only_fields", array("code", "payment_transaction_id", "subscription_transaction_id"));
 	
@@ -608,6 +646,7 @@
 				<th></th>
 				<th></th>
 				<th></th>
+				<th> </th>
 			</tr>
 		</thead>
 		<tbody id="orders" class="list:order orders-list">	
@@ -659,6 +698,13 @@
 							</td>
 							<td align="center">
 								<a href="admin.php?page=pmpro-orders&order=-1&copy=<?php echo $order->id;?>"><?php _e('copy', 'pmpro');?></a>
+							</td>
+							<td align="center">
+							<?php if($order->status !="success"){ ?>
+							
+							
+								<a href="admin.php?page=pmpro-orders&verify=true&order=<?php echo $order->id;?>"><?php _e('Re-Verify', 'pmpro');?></a>
+								<?php }else { echo "Verified";} ?>
 							</td>
 							<td align="center">
 								<a href="javascript:askfirst('<?php printf(__("Deleting orders is permanent and can affect active users. Are you sure you want to delete order %s?", "pmpro"), str_replace("'", "", $order->code));?>', 'admin.php?page=pmpro-orders&delete=<?php echo $order->id;?>'); void(0);"><?php _e('delete', 'pmpro');?></a>
